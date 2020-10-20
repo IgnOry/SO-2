@@ -1,3 +1,47 @@
+
+#include <stdio.h>
+
+typedef struct {
+    char data[4096];
+    int key;
+} item;
+
+item array[] = {
+    {"bill", 3},
+    {"neil", 4},
+    {"john", 2},
+    {"rick", 5},
+    {"alex", 1},
+};
+
+void sort(item *a, int n) {
+    int i = 0, j = 0;
+    //int s = 1; //s es irrelevante (?)
+    item* p;
+
+    for(; i < n; i++) { //Se quita la s del for (tanto en comparacion como dentro)
+        p = a;
+        j = n-1;
+        do {
+            if( (p+i)->key > (p+j)->key) { //i y j como variables, en vez de nada y +1
+                item t = *(p+i); //Cambio a variable temporal
+                *(p+i)  = *(p+j);
+                *(p+j) = t;
+            }
+        } while ( --j >= i ); //Solo hasta i, no hasta 0 (ya que por debajo de i ya estaria ordenado)
+    }
+}
+
+int main() {
+    int i;
+    sort(array,5);
+    for(i = 0; i < 5; i++)
+        printf("array[%d] = {%s, %d}\n",
+                i, array[i].data, array[i].key);
+    return 0;
+}
+
+/* Codigo original
 #include <stdio.h>
 
 typedef struct {
@@ -41,3 +85,4 @@ int main() {
                 i, array[i].data, array[i].key);
     return 0;
 }
+*/
