@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	int c,ret;
 
 	if (argc!=3) {
-		fprintf(stderr,"Usage: %s <file_name>\n <block_size>",argv[0]);
+		fprintf(stderr,"Usage: %s <file_name> <block_size> \n",argv[0]);
 		exit(1);
 	}
 
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 			err(3,"Memory Allocation error");
 		}
 
-	/* Read file byte by byte */
+	// Read file byte by byte
 
 	//Version con while
 
@@ -61,18 +61,9 @@ int main(int argc, char* argv[]) {
 			if (ret != c)
 			{
 				fclose(file);
-				err(4,"putc() failed!!");
+				err(4,"fwrite() failed!!");
 			}
 		}
-
-	/* Version con for
-	for (int i =0; i < fileSize; i++)
-	{
-		c = fread(fileBuffer, 1, fileSize, file); //buffer, 1 byte, tamaño total, archivo de lectura
-		ret = fwrite (fileBuffer, 1, c, stdout); //buffer, 1 byte, tamaño total, salida
-	}
-	*/
-	
 
 	fclose(file);
 	return 0;

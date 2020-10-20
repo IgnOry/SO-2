@@ -14,11 +14,35 @@ extern char *use;
  *
  * Returns the number of bytes actually copied or -1 if an error occured.
  */
+
 int
 copynFile(FILE * origin, FILE * destination, int nBytes)
 {
 	// Complete the function
-	return -1;
+
+	int bytes = 0;
+	char buffer[nBytes]; //No se va a usar mas espacio (?)
+	
+	if (origin == NULL) //Comprobacion de archivo no nulo
+		return -1;
+
+	//Version con fread y fwrite (byte a byte)
+
+	while (bytes < nBytes && (c = fread(buffer, 1, 1, origin)) > 0) { //Si el numero de bytes escritos no supera el dado, o no se lee
+								
+				ret = fwrite (buffer, 1, c, destination); //buffer, 1 byte, tamaño total, salida
+				
+				if (ret != c) //Comprobacion de errores (?)
+				{
+					fclose(origin);
+					fclose(destination);
+					return -1;
+				}
+
+				bytes++;
+			}
+
+	return bytes;
 }
 
 /** Loads a string from a file.
@@ -36,7 +60,29 @@ char*
 loadstr(FILE * file)
 {
 	// Complete the function
-	return NULL;
+	char* fileBuffer;
+
+	//Allocate memory
+	fseek(file, 0, SEEK_END);
+	long fileSize = ftell (file);
+	rewind(file);
+
+	fileBuffer = (char*) malloc(sizeof(char)*fileSize);
+	if (fileBuffer == NULL)
+		{
+			return NULL;
+		}
+
+	//Store the content
+
+	for (int i = 0; i < fileSize; i++)
+	{
+		fileBuffer[i] = getc(file);
+	}
+
+	fclose(file);
+
+	return fileBuffer;
 }
 
 /** Read tarball header and store it in memory.
