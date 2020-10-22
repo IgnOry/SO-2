@@ -82,7 +82,7 @@ loadstr(FILE * file)
 
 	fclose(file);
 
-	return fileBuffer;
+	return fileBuffer; //return !NULL?
 }
 
 /** Read tarball header and store it in memory.
@@ -94,11 +94,36 @@ loadstr(FILE * file)
  * On success it returns the starting memory address of an array that stores 
  * the (name,size) pairs read from the tar file. Upon failure, the function returns NULL.
  */
-stHeaderEntry*
-readHeader(FILE * tarFile, int *nFiles)
+stHeaderEntry* readHeader(FILE * tarFile, stHeaderEntry **header, int *nFiles)
 {
 	// Complete the function
-	return NULL;
+
+	stHeaderEntry* array = NULL;
+	int nr_files = 0;
+
+	if (fread(&nr_files, sizeof(int), 1, tarFile) == 0) //nr_files como buffer, sizeof(int) por ser mirarse numero de archivos, 1, tarFile como archivo de lectura
+	{
+		printf("ERROR\n");
+		return NULL;
+	}
+
+	//Lectura de numero de ficheros del tarFile y se vuelca en nrfiles
+
+	array = malloc(sizeof(stHeaderEntry)*nr_files);
+
+	for (int i = 0; i < nr_files; i++) //Para cada archivo
+	{
+		//hacer cosas
+	}
+
+
+
+	//Lectura de metainformacion de tarfile y se vuelca en array
+
+	(*nFiles) = nr_files;
+	(*header) = array;
+
+	return (EXIT_SUCCESS);
 }
 
 /** Creates a tarball archive 
@@ -126,7 +151,38 @@ int
 createTar(int nFiles, char *fileNames[], char tarName[])
 {
 	// Complete the function
-	return EXIT_FAILURE;
+
+	//Se abre archivo mtar (Open?)
+
+	//Se reserva memoria para el array de stHeaderEntry
+
+	//Se deja hueco para la cabecera para ir a donde empiezan los datos
+
+	for (int i = 0; i < nFiles; i++) //Para cada archivo
+ 	{
+		//abrir inputFile
+		
+		copynFile(inputFile, tarFile, INT_MAX); //Viene asi en las transparencias
+
+		close(inputFile);
+
+		//Rellenar stHeaderEntry con la ruta y tamaño de inputFile
+	}
+
+	//Volver al byte 0
+
+	//Escribir numero de ficheros, nFiles
+
+	//free cosas
+
+	//close(tarFile);
+
+
+	if (0)
+		return EXIT_FAILURE;
+
+	if (1)
+		return EXIT_SUCCESS;
 }
 
 /** Extract files stored in a tarball archive
