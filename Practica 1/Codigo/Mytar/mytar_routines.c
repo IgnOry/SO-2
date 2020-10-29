@@ -20,16 +20,21 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 {
 	// Complete the function
 
-	int bytes = 0;
-	char buffer[nBytes]; //No se va a usar mas espacio (?)
+	int bytes = 0, c = 0, ret = 0;
+
+	//Da error
+	char* buffer; //No se va a usar mas espacio (?)
 	
+
 	if (origin == NULL) //Comprobacion de archivo no nulo
 		return -1;
 
 	//Version con fread y fwrite (byte a byte)
 
+	buffer = (char*) malloc(sizeof(char)*nBytes);
+
 	while (bytes < nBytes && (c = fread(buffer, 1, 1, origin)) > 0) { //Si el numero de bytes escritos no supera el dado, o no se lee
-								
+
 				ret = fwrite (buffer, 1, c, destination); //buffer, 1 byte, tamaño total, salida
 				
 				if (ret != c) //Comprobacion de errores (?)
@@ -114,9 +119,21 @@ stHeaderEntry* readHeader(FILE * tarFile, stHeaderEntry **header, int *nFiles)
 	for (int i = 0; i < nr_files; i++) //Para cada archivo
 	{
 		//hacer cosas
+
+		printf("debug\n");
+
+		if ((array[i].name == loadstr(tarFile)) == NULL) //name es campo del struct stHeaderEntry
+		//Si es null, es que no se ha leido bien, a dar error
+		{ 
+			printf("ERROR: loading string failed.\n");
+			return NULL;
+		}
+
+		int auxSize = 0;
+
+		fread(&auxSize, sizeof(unsigned int), 1, tarFile); //Lee el tamaño del archivo, y se guarda en variable auxiliar
+		array[i].size = auxSize; //size es campo del struct
 	}
-
-
 
 	//Lectura de metainformacion de tarfile y se vuelca en array
 
@@ -152,37 +169,102 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 {
 	// Complete the function
 
+	FILE* input;
+	FILE* output;
+	stHeaderEntry* header;
+
+	int copiedBytes = 0, headerBytes = 0, i = 0;
+
 	//Se abre archivo mtar (Open?)
 
 	//Se reserva memoria para el array de stHeaderEntry
 
+	header = malloc(sizeof(stHeaderEntry) * nFiles);
+
+	headerBytes += sizeof(int); //Numero de archivos?
+	headerBytes += nFiles * sizeof(unsigned int); //Espacio necesario para cada archivo?
+
 	//Se deja hueco para la cabecera para ir a donde empiezan los datos
+
+	for (int i = 0; i < nFiles; i++) //Para cada archivo
+		{
+			headerBytes += strlen(fileNames[i] + 1); //+1 para fin de archivo?
+		}
+
+	//Abrir archivo de salida
+
+	output = fopen(tarName, "w"); //"w" para escritura
+	fseek(output, headerBytes, SEEK_SET); //Para no comerse informacion previa, se pone el puntero despues de la informacion ya guardada
+
+	//Lectura de datos
 
 	for (int i = 0; i < nFiles; i++) //Para cada archivo
  	{
 		//abrir inputFile
+		if ((input = fopen(fileNames[i], "r")) == NULL) //"r" para lectura
+		//Si da null, es que hay error
+		{
+			printf("ERROR: file does not exist: %s \n", fileNames[i]);
+			return EXIT_FAILURE;
+		}
 		
-		copynFile(inputFile, tarFile, INT_MAX); //Viene asi en las transparencias
+		//AQUI DENTRO PETA
 
-		close(inputFile);
+		copiedBytes = copynFile(input, output, INT_MAX); //Viene asi en las transparencias
+
+		if (copiedBytes == -1) {
+			printf("ERROR: invalid copied bytes\n");
+			return EXIT_FAILURE;
+		}
+		else {
+			header[i].size = copiedBytes;
+			header[i].name = malloc(sizeof(fileNames[i]) + 1);
+			strcpy(header[i].name, fileNames[i]);
+		}
+
+		if (fclose(input) == EOF) {	//Por si hay fallo en el cierre del fichero
+			printf("ERROR: couldn't close file\n");
+			return EXIT_FAILURE;
+		}
 
 		//Rellenar stHeaderEntry con la ruta y tamaño de inputFile
 	}
 
+	//Escritura de datos
+
 	//Volver al byte 0
-
-	//Escribir numero de ficheros, nFiles
-
-	//free cosas
-
-	//close(tarFile);
-
-
-	if (0)
+	if (fseek(output, 0, SEEK_SET) != 0) //por si al colocar el puntero al principio del archivo hay error
+	{
+		printf("ERROR: Couldn't set pointer at the beginning of the file\n");
 		return EXIT_FAILURE;
+	}
+	else //Aunque igual el else no hace falta porque el return rompe flujo
+	
+		fwrite(&nFiles, sizeof(int), 1, output); //Escribe el numero de archivos
 
-	if (1)
+	for (int i = 0; i < nFiles; i++) //Para cada archivo
+ 	//Se escriben los datos guardados en el otro for
+	{
+		fwrite(header[i].name, strlen(header[i].name) + 1, 1, output); 
+		fwrite(&header[i].size, sizeof(unsigned int), 1, output);
+	}
+	
+	//free cosas
+	for (i = 0; i < nFiles; i++) {
+		free(header[i].name);
+	}
+	free(header);
+
+	if (fclose(output) == EOF)
+	{
+		printf("ERROR: couldn't close file\n");
+		return EXIT_FAILURE;
+	}
+	else
+	{
+		printf("mtar file created!\n");
 		return EXIT_SUCCESS;
+	}
 }
 
 /** Extract files stored in a tarball archive
@@ -203,5 +285,67 @@ int
 extractTar(char tarName[])
 {
 	// Complete the function
-	return EXIT_FAILURE;
+
+	FILE* input;
+	FILE* output;
+	stHeaderEntry* header;
+
+	int copiedBytes = 0, nFiles = 0;
+
+	if ((input = fopen(tarName, "r")) == NULL) 
+	//Si hay error al leer el archivo de origen
+	{
+		printf("ERROR: file couldn't be read: %s \n", tarName);
+		return EXIT_FAILURE;
+	}
+
+	printf("debug\n");
+
+	readHeader(input, &header, &nFiles);
+
+	if (header == NULL)
+	{
+		printf("ERROR: error loading the headers \n");
+		return EXIT_FAILURE;
+	}
+
+
+	for (int i = 0; i < nFiles; i++) //Para cada archivo
+	{
+		if ((output = fopen(header[i].name, "w")) == NULL) //Intentar abrir cada archivo en modo escritura
+		{
+			return EXIT_FAILURE;
+		}
+
+		else
+		{
+			copiedBytes = copynFile(input, output, header[i].size);
+
+			if (copiedBytes == -1)
+			{
+				printf("ERROR: invalid copied bytes\n");
+				return EXIT_FAILURE;
+			}
+		}
+
+		if (fclose(output) != 0)
+		{
+			printf("ERROR: couldn't close file\n");
+			return EXIT_FAILURE;
+		}
+		
+		for (i = 0; i < nFiles; i++) {
+			free(header[i].name);
+		}
+
+		free(header);
+
+		if (fclose(input) == EOF) 
+		{
+			printf("ERROR: couldn't close file\n");
+			return (EXIT_FAILURE);
+		}
+	}
+
+	return EXIT_SUCCESS;
 }
