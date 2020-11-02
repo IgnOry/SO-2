@@ -1,0 +1,3 @@
+./mytar -c -f test.mtar a.txt b.txt c.txt
+./mytar -x -f ../test.mtar
+
