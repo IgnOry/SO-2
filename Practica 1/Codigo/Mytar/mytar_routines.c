@@ -311,23 +311,23 @@ extractTar(char tarName[])
 			}
 		}
 
-		if (fclose(output) != 0)
-		{
-			printf("ERROR: couldn't close output file\n");
-			return EXIT_FAILURE;
-		}
-		
-		for (int i = 0; i < nFiles; i++) {
-			free(header[i].name);
-		}
+	}
+	if (fclose(output) != 0)
+	{
+		printf("ERROR: couldn't close output file\n");
+		return EXIT_FAILURE;
+	}
+	
+	for (int i = 0; i < nFiles; i++) {
+		free(header[i].name);
+	}
 
-		free(header);
+	free(header);
 
-		if (fclose(input) == EOF) 
-		{
-			printf("ERROR: couldn't close input file\n");
-			return (EXIT_FAILURE);
-		}
+	if (fclose(input) == EOF) 
+	{
+		printf("ERROR: couldn't close input file\n");
+		return (EXIT_FAILURE);
 	}
 
 	return EXIT_SUCCESS;
