@@ -314,41 +314,49 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 
 	//return 0;
 
-    char buffer[BLOCK_SIZE_BYTES];
-    int bytes2Read, totalRead = 0;
+    char  buffer[BLOCK_SIZE_BYTES ];
+	int  bytes2Read = size, totalRead = 0;
+	NodeStruct *node = myFileSystem.nodes[fi->fh];
     
-    NodeStruct* node = myFileSystem.nodes[fi->fh];
     
-    //Comprobar que offset no sale fuera del fichero
-    /*if El if es con un lseek y un puntero de lectura?
-        {
-
-        }
-    */
-
     //bytes2Read = numero de bytes a leer (puede ser menor que size)
-    //Ni zorra de esto
-    
-    while (totalRead < bytes2Read) 
+   
+    while (bytes2Read) 
     {
-        int i, currentBlock, offBlock;
-        
-        //currentBlock = bloque fı́sico en la posición offset
-        currentBlock = node->blocks[offset / BLOCK_SIZE_BYTES];
+		int i, currentBlock, offBlock;
 
+        //currentBlock = bloque fı́sico en la posición offset
+		currentBlock = node->blocks[offset / BLOCK_SIZE_BYTES];
+		
         //offBlock = desplazamiento en el bloque fı́sico correspondiente
         offBlock = offset % BLOCK_SIZE_BYTES;
-        
+
         //buffer ← bloque currentblock del disco virtual
-        
-        //copiar los bytes leı́dos al buffer de salida buf
-        
+		if( readBlock(&myFileSystem, currentBlock, &buffer)==-1 ) 
+        {
+		    fprintf(stderr,"Error reading blocks in my_write\n");
+			return -EIO;
+		}
+
+		for(i = offBlock; (i < BLOCK_SIZE_BYTES) && (totalRead < size); i++) 
+        {
+			buf[totalRead++] = buffer[i];         //copiar los bytes leı́dos al buffer de salida buf
+		}
+
         //actualizar offset y totalRead
-    }
+		totalRead -= (i - offBlock);
+		offset += (i - offBlock);
+	}
 
 	sync();
+	
+    node->modificationTime = time(NULL);
 
-    return totalRead;
+	updateSuperBlock(&myFileSystem);
+	updateBitmap(&myFileSystem);
+	updateNode(&myFileSystem, fi->fh, node);
+
+	return totalRead;
 }
 
 /**
@@ -551,23 +559,32 @@ static int my_unlink(const char *path) //Orden copiado del pseudocodigo dado en 
     if (idxNode == -1) 
     {
         fprintf(stderr, "Archivo no encontrado\n");
-    	return -1;*/
+    	return -1;
     }
 
     //idxNode = nodo-i del fichero
-    int auxIdNode = myFileSystem.directory.files[nodeID].nodeIdx;
-	NodeStruct* iNode = myFileSystem.nodes[iNodeID]; //i-Nodo como variable auxiliar
+    int auxIdNode = myFileSystem.directory.files[idxNode].nodeIdx;
+	NodeStruct* iNode = myFileSystem.nodes[idxNode]; //i-Nodo como variable auxiliar
 
-    //Truncar el fichero utilizando resizeNode
-
+    //Truncar el fichero utilizando resizeNode????????????????
+    
     /*
-    Ni zorra de que hay que hacer
-    int tam; //Nuevo tamano del nodo
-    resizeNode (auxIdNode, tam);
-    */
+	for (int i = 0; i < myFileSystem.nodes[idxNode]->numBlocks; i++) 
+    {
+		num_bloque = myFileSystem.nodes[idxNode]->blocks[i];
+		myFileSystem.bitMap[num_bloque] = 0;
+
+		if ((lseek(myFileSystem.fdVirtualDisk, num_bloque * BLOCK_SIZE_BYTES, SEEK_SET) == (off_t) - 1) || (write(myFileSystem.fdVirtualDisk, &bloque, BLOCK_SIZE_BYTES) == -1)) 
+        {
+            fprintf(stderr, "Fallo\n");
+			return -1;
+		}
+	}*/
+
+	updateBitmap(&myFileSystem);
 
     //Marcar la entrada de directorio como libre
-	myFileSystem.directory.files[nodeID].freeFile = true;
+	myFileSystem.directory.files[idxNode].freeFile = true;
 
     //Decrementar el contador de ficheros del directorio
     myFileSystem.directory.numFiles -= 1; //Se resta el archivo del numero de ficheros
