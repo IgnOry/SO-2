@@ -312,16 +312,20 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 {
 	//COMPLETAR
 
-	//return 0;
-
-    char  buffer[BLOCK_SIZE_BYTES ];
-	int  bytes2Read = size, totalRead = 0;
+    char  buffer[BLOCK_SIZE_BYTES];
 	NodeStruct *node = myFileSystem.nodes[fi->fh];
-    
-    
-    //bytes2Read = numero de bytes a leer (puede ser menor que size)
-   
-    while (bytes2Read) 
+	int totalRead = 0;
+    int bytes2Read = size;
+
+    if(node->fileSize<size)
+        bytes2Read = node->fileSize; 
+
+    free(buf);
+
+    buf = (char*) malloc(size);
+    memset(buf, 0, size);
+
+    while (totalRead<bytes2Read) 
     {
 		int i, currentBlock, offBlock;
 
@@ -338,19 +342,19 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 			return -EIO;
 		}
 
-		for(i = offBlock; (i < BLOCK_SIZE_BYTES) && (totalRead < size); i++) 
+		for(i = offBlock; (i < BLOCK_SIZE_BYTES) && (totalRead < bytes2Read); i++)
         {
-			buf[totalRead++] = buffer[i];         //copiar los bytes leı́dos al buffer de salida buf
+			buf[totalRead] = buffer[i];//copiar los bytes leı́dos al buffer de salida buf
+            totalRead++;
 		}
 
         //actualizar offset y totalRead
-		totalRead -= (i - offBlock);
 		offset += (i - offBlock);
 	}
 
 	sync();
 	
-    node->modificationTime = time(NULL);
+    //node->modificationTime = time(NULL);//al ser lectura no se actualiza el modification
 
 	updateSuperBlock(&myFileSystem);
 	updateBitmap(&myFileSystem);
@@ -546,10 +550,6 @@ static int my_truncate(const char *path, off_t size)
  **/
 static int my_unlink(const char *path) //Orden copiado del pseudocodigo dado en diapos, igual hay que cambiar cosas
 {
-	// quitar el fprintf y COMPLETAR
-	/*fprintf(stderr, "No implementada!!\n");
-
-	return -1;*/
 
     char* filename = (char*)(path + 1);
 
@@ -566,20 +566,8 @@ static int my_unlink(const char *path) //Orden copiado del pseudocodigo dado en 
     int auxIdNode = myFileSystem.directory.files[idxNode].nodeIdx;
 	NodeStruct* iNode = myFileSystem.nodes[idxNode]; //i-Nodo como variable auxiliar
 
-    //Truncar el fichero utilizando resizeNode????????????????
-    
-    /*
-	for (int i = 0; i < myFileSystem.nodes[idxNode]->numBlocks; i++) 
-    {
-		num_bloque = myFileSystem.nodes[idxNode]->blocks[i];
-		myFileSystem.bitMap[num_bloque] = 0;
-
-		if ((lseek(myFileSystem.fdVirtualDisk, num_bloque * BLOCK_SIZE_BYTES, SEEK_SET) == (off_t) - 1) || (write(myFileSystem.fdVirtualDisk, &bloque, BLOCK_SIZE_BYTES) == -1)) 
-        {
-            fprintf(stderr, "Fallo\n");
-			return -1;
-		}
-	}*/
+    //Truncar el fichero utilizando resizeNode
+    resizeNode(idxNode, 0);
 
 	updateBitmap(&myFileSystem);
 
@@ -633,4 +621,3 @@ struct fuse_operations myFS_operations = {
     .mknod		= my_mknod,						// Create a new file
 	.unlink     = my_unlink,                    // Removes a file
 };
-
