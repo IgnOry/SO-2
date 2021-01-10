@@ -1,0 +1,7 @@
+RESPUESTAS
+-----------
+
+Ej. 1:
+	a) El comando más básico es "gcc NombreArchivo.c", y crea un programa con el nombre a.out
+
+	b) Para compilar se emplea "gcc -c NombreArchivo.c", para enlazarlo se hace "gcc -o Nombre NombreArchivo.o" 
