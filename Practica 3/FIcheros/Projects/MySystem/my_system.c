@@ -9,7 +9,7 @@ int my_system(char* command)
 
 	if (pid_ == 0) //Child
 	{
-		execlp("sh", "sh", "-c", command, (char*) NULL);
+		execlp("sh", "sh", "-c", command, (char*) NULL); //Ejecucion de comando
 		exit(-1);
 	}
 

@@ -8,30 +8,18 @@
 
 pthread_t philosophers[NR_PHILOSOPHERS];
 
-//Para mutex
-pthread_mutex_t forks[NR_PHILOSOPHERS];
+pthread_mutex_t forks[NR_PHILOSOPHERS]; //Para mutex
 
-//Para semáforos
-sem_t semForks[NR_PHILOSOPHERS];
-
-char* p;
+sem_t semForks[NR_PHILOSOPHERS]; //Para semáforos
 
 char* names[NR_PHILOSOPHERS] = 
 {
-    "F. Ranco",
-    "F. Raga",
-    "M. Rajoy",
-    "M. Casas",
-    "C. añita Brava"
+    "Kaidy Kayn",
+    "Kidd Keo",
+    "Yung Beef",
+    "Cecilio G",
+    "Pimp Flaco"
 };
-
-/*void init()
-{
-    int i;
-    for(i=0; i<NR_PHILOSOPHERS; i++)
-        pthread_mutex_init(&forks[i],NULL);
-    
-}*/
 
 void think(int i) 
 {
@@ -56,16 +44,14 @@ void toSleep(int i)
 
 void* philosopherMutex(void* i)
 {
-    int nPhilosopher = (int)i;
+    int nPhilosopher = (int) i;
     int right = nPhilosopher;
     int left = (nPhilosopher - 1 == -1) ? NR_PHILOSOPHERS - 1 : (nPhilosopher - 1);
     
-    while(1) 
+    while(1) //true
     {   
         think(nPhilosopher);
         
-        /// TRY TO GRAB BOTH FORKS (right and left)
-
         //Coger qué tenedores
 
         int r = right;
@@ -77,18 +63,14 @@ void* philosopherMutex(void* i)
             l = right;
         }
 
-        //Coger tenedores
-
+        //Coger los tenedores/mutex seleccionados
         pthread_mutex_lock(&forks[r]); 
         pthread_mutex_lock(&forks[l]);
 
 
         eat(nPhilosopher);
         
-        // PUT FORKS BACK ON THE TABLE
-
-        //Se dejan los tenedores en la mesa
-
+        //Se dejan los tenedores en la mesa/se liberan mutex
         pthread_mutex_unlock(&forks[l]); 
         pthread_mutex_unlock(&forks[r]);
 
@@ -98,16 +80,14 @@ void* philosopherMutex(void* i)
 
 void* philosopherSemaforo(void* i)
 {
-    int nPhilosopher = (int)i;
+    int nPhilosopher = (int) i;
     int right = nPhilosopher;
     int left = (nPhilosopher - 1 == -1) ? NR_PHILOSOPHERS - 1 : (nPhilosopher - 1);
     
-    while(1) 
+    while(1) //true
     {   
         think(nPhilosopher);
         
-        ///TRY TO GRAB BOTH FORKS (right and left)
-
         //Coger qué tenedores
 
         int r = right;
@@ -119,17 +99,13 @@ void* philosopherSemaforo(void* i)
             l = right;
         }
 
-        //Coger tenedores
-
+        //Coger tenedores/semaforos
         sem_wait(&semForks[r]);
         sem_wait(&semForks[l]);
 
         eat(nPhilosopher); //Esto se lo saltan
         
-        //PUT FORKS BACK ON THE TABLE
-
         //Se dejan los tenedores en la mesa
-
         sem_post(&semForks[r]);
         sem_post(&semForks[l]);
 
@@ -141,51 +117,63 @@ int main(int argc, char* argv[])
 {
     if (argc!=2) //Control
     {
-		fprintf(stderr,"Usage: %s <0/1> //0 para mutex, 1 para semaforos \n",argv[0]);
+		fprintf(stderr,"Uso: %s <0/1> //0 para mutex, 1 para semaforos \n",argv[0]);
 		exit(1);
 	}
 
-  int control = strtol(argv[1], p, 10); //De string a int. Que string (argumento 2, el 1 es el nombre del archivo), puntero, base de conversion
+    int i;
+
+    int control = strtol(argv[1], NULL, 10); //De string a int. Que string (argumento 2, el 1 es el nombre del archivo), puntero, base de conversion
 
     if (control == 0) //Mutex
     {
-        printf("Mutex, anda que ya te vale\n");
+        printf("Mutex\n");
 
-        //Init
-        int i;
-
+        //Inicializacion
         for(i = 0; i<NR_PHILOSOPHERS; i++)
-            pthread_mutex_init(&forks[i],NULL);
-        
-        //Creacion de hilos
+        {
+           pthread_mutex_init(&forks[i],NULL);
+        }
 
+        //Creacion de hilos
         for(i=0; i<NR_PHILOSOPHERS; i++)
-            pthread_create(&philosophers[i], NULL, philosopherMutex, (void*)i);
-        
+        {
+           pthread_create(&philosophers[i], NULL, philosopherMutex, (void*)i);
+        }
+
+        //Espera de hilos
         for(i=0; i<NR_PHILOSOPHERS; i++)
+        {
             pthread_join(philosophers[i],NULL);
+        }
     }
     else if (control == 1) //Semaforos
     {
-        printf("Semaforos, vaya tela\n");
+        printf("Semaforos\n");
 
-        int i;
+        //Inicializacion
+        for(i = 0; i<NR_PHILOSOPHERS; i++)
+        {
+            sem_init(&semForks[i], 1, NR_PHILOSOPHERS);
+        }
 
-        sem_init(&semForks, 0, NR_PHILOSOPHERS);
-        /*
-        init();
-        unsigned long i;*/
-        
+        //Creacion de hilos
         for(i=0; i<NR_PHILOSOPHERS; i++)
+        {
             pthread_create(&philosophers[i], NULL, philosopherSemaforo, (void*)i);
-        
+        }
+
+        //Espera de hilos
         for(i=0; i<NR_PHILOSOPHERS; i++)
+        {
             pthread_join(philosophers[i],NULL);
+        }
     }
     else
     {
-        printf("Eres tontisimo\n");
-    }
+		fprintf(stderr,"Uso: %s <0/1> //0 para mutex, 1 para semaforos \n",argv[0]);
+		exit(1);
+	}
     
     return 0;
 } 
